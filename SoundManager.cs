@@ -5,7 +5,7 @@ namespace PofyTools
 	using System.Collections;
 	using System.Collections.Generic;
 
-	[RequireComponent (typeof(AudioListener))]
+	//	[RequireComponent (typeof(AudioListener))]
 	public class SoundManager : MonoBehaviour, IDictionary<string,AudioClip>
 	{
 		
@@ -69,7 +69,7 @@ namespace PofyTools
 				//this._musicSource.playOnAwake = true;
 				this._musicSource.loop = true;
 				this._musicSource.volume = this.musicVolume;
-				this._musicSource.Play ();
+				//this._musicSource.Play ();
 			}
 
 			if (this._dictionary == null)
@@ -116,9 +116,30 @@ namespace PofyTools
 			return PlayVariation (clips [Random.Range (0, clips.Length)]);
 		}
 
+		public static AudioSource PlayRandomFrom (List<string> list)
+		{
+			return PlayVariation (list [Random.Range (0, list.Count)]);
+		}
+
 		public static AudioSource PlayRandomCustom (params AudioClip[]clips)
 		{
 			return PlayVariation (clips [Random.Range (0, clips.Length)]);
+		}
+
+		public static void PlayMusic ()
+		{
+			Sounds._musicSource.Play ();
+		}
+
+		public static bool IsMusicPlaying ()
+		{
+			return Sounds._musicSource.isPlaying;
+		}
+
+		public static void PlayCustomMusic (AudioClip newMusic)
+		{
+			Sounds._musicSource.clip = newMusic;
+			Sounds._musicSource.Play ();
 		}
 
 		//Plays clip that is not in manager's dictionary
@@ -206,14 +227,18 @@ namespace PofyTools
 
 		public static void ResumeAll ()
 		{
-			if (Sounds.music != null)
+			if (Sounds.music != null) {
 				Sounds._musicSource.UnPause ();
+
+			}
 			
 			for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++) {
 				var source = Sounds._sources [i];
 				source.UnPause ();
 			}
 		}
+
+
 
 		public static void StopAll ()
 		{
