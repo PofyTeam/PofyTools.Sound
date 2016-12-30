@@ -1,2 +1,2 @@
 # PofyTools.Sound
-Sound Manager and other tools for Unity.
+Sound Manager for Unity. Requires PofyTools.Core component. 
