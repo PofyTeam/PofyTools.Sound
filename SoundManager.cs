@@ -68,14 +68,13 @@ namespace PofyTools.Sound
 
 		void LoadPrefabSounds()
 		{
+			this._musicSource = this.gameObject.AddComponent<AudioSource>();
 			if (this.music != null)
 			{
-				this._musicSource = this.gameObject.AddComponent<AudioSource>();
 				this._musicSource.clip = this.music;
-				//this._musicSource.playOnAwake = true;
+
 				this._musicSource.loop = true;
 				this._musicSource.volume = this.musicVolume;
-				//this._musicSource.Play ();
 			}
 
 			if (this._dictionary == null)
