@@ -10,24 +10,33 @@ namespace PofyTools.Sound
 	{
 		public const string TAG = "<color=red><b><i>SoundManager: </i></b></color>";
 
-		public AudioListener audioListener{ get; private set; }
-
-		private List<AudioSource> _sources;
-		private AudioSource _musicSource;
-
-		public AudioClip[] clips;
-		private Dictionary<string,AudioClip> _dictionary;
-		public AudioClip music;
 		public static SoundManager Sounds;
+
+		[Header("Sounds")]
+		public AudioClip[] clips;
+
 		public int voices = 1;
 		private int _head = 0;
 		public Range volumeVariationRange = new Range(0.9f, 1), pitchVariationRange = new Range(0.95f, 1.05f);
-		[Range(0, 1)]public float masterVolume = 1;
+
+		public AudioListener audioListener{ get; private set; }
+
+		private List<AudioSource> _sources;
+
+		[Header("Music")]
+		public AudioClip music;
+
+		private AudioSource _musicSource;
 		[Range(0, 1)]public float musicVolume = 1;
+
+		[Header("Master")]
+		[Range(0, 1)]public float masterVolume = 1;
+		public bool dockMusicOnSound = false;
 
 		[Header("Resources")]
 		public string resourcePath = "Sound";
 		public bool loadFromResources = true;
+		private Dictionary<string,AudioClip> _dictionary;
 
 		void Awake()
 		{
@@ -49,9 +58,6 @@ namespace PofyTools.Sound
 			if (this.loadFromResources)
 				LoadResourceSounds();
 			LoadPrefabSounds();
-
-
-
 		}
 
 		void LoadResourceSounds()
@@ -284,6 +290,104 @@ namespace PofyTools.Sound
 
 		#endregion
 
+		#region Docking
+
+		private float _dockVolume;
+		private float _dockingTimer;
+		private float _dockingDuration;
+
+		public static bool isDocked
+		{
+			get
+			{
+				return Sounds._musicSource.volume == Sounds._dockVolume;
+			}
+		}
+
+		public static void DockAll(float dockToVolume = 1f, float dockingDuration = 0.5f)
+		{
+			Sounds.StopAllCoroutines();
+
+			Sounds._dockVolume = dockToVolume;
+			Sounds._dockingDuration = dockingDuration;
+			Sounds._dockingTimer = dockingDuration;
+
+			Sounds.StartCoroutine(Sounds.DockAll());
+		}
+
+		public static void DockMusic(float dockToVolume = 0f, float dockingDuration = 0.5f)
+		{
+			Sounds.StopAllCoroutines();
+
+			Sounds._dockVolume = dockToVolume;
+			Sounds._dockingDuration = dockingDuration;
+			Sounds._dockingTimer = dockingDuration;
+
+			Sounds.StartCoroutine(Sounds.DockMusic());
+		}
+
+		public static void DockSound(float dockToVolume = 0f, float dockingDuration = 0.5f)
+		{
+			Sounds.StopAllCoroutines();
+
+			Sounds._dockVolume = dockToVolume;
+			Sounds._dockingDuration = dockingDuration;
+			Sounds._dockingTimer = dockingDuration;
+
+			Sounds.StartCoroutine(Sounds.DockSounds());
+		}
+
+		IEnumerator DockAll()
+		{
+			while (this._dockingTimer > 0)
+			{
+				this._dockingTimer -= Time.unscaledDeltaTime;
+				if (this._dockingTimer < 0)
+					this._dockingTimer = 0;
+
+				float normalizedTime = 1 - this._dockingTimer / this._dockingDuration;
+				this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._dockVolume, normalizedTime);
+
+				foreach (var source in this._sources)
+				{
+					source.volume = Mathf.Lerp(source.volume, this._dockVolume, normalizedTime);
+				}
+				yield return null;
+			}
+		}
+
+		IEnumerator DockMusic()
+		{
+			while (this._dockingTimer > 0)
+			{
+				this._dockingTimer -= Time.unscaledDeltaTime;
+				if (this._dockingTimer < 0)
+					this._dockingTimer = 0;
+
+				float normalizedTime = 1 - this._dockingTimer / this._dockingDuration;
+				this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._dockVolume, normalizedTime);
+				yield return null;
+			}
+		}
+
+		IEnumerator DockSounds()
+		{
+			while (this._dockingTimer > 0)
+			{
+				this._dockingTimer -= Time.unscaledDeltaTime;
+				if (this._dockingTimer < 0)
+					this._dockingTimer = 0;
+
+				float normalizedTime = 1 - this._dockingTimer / this._dockingDuration;
+				foreach (var source in this._sources)
+				{
+					source.volume = Mathf.Lerp(source.volume, this._dockVolume, normalizedTime);
+				}
+				yield return null;
+			}
+		}
+
+		#endregion
 
 		#region IDictionary implementation
 
