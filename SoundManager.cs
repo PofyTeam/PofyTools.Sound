@@ -52,6 +52,11 @@ namespace PofyTools.Sound
             }
         }
 
+        void OnDestroy()
+        {
+            StopAllCoroutines();
+        }
+
         void Initialize()
         {
             this.audioListener = GetComponent<AudioListener>();
