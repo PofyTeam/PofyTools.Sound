@@ -26,12 +26,28 @@ namespace PofyTools.Sound
         [Header("Music")]
         public AudioClip music;
 
-        private AudioSource _musicSource;
+        public bool crossMixMusic;
+        public float crossMixDuration = 0.2f;
+
+        public bool duckMusicOnSound;
+
+        public float duckOnSoundTransitionDuration = 0.1f, duckOnSoundVolume = 0.2f;
+
+        private AudioSource _musicSource
+        {
+            get
+            {
+                return this._musicSources[this._musicHead];
+            }
+        }
+
+        private AudioSource[] _musicSources;
+        private int _musicHead = -1;
+
         [Range(0, 1)]public float musicVolume = 1;
 
         [Header("Master")]
         [Range(0, 1)]public float masterVolume = 1;
-        public bool dockMusicOnSound = false;
 
         [Header("Resources")]
         public string resourcePath = "Sound";
@@ -60,6 +76,12 @@ namespace PofyTools.Sound
         void Initialize()
         {
             this.audioListener = GetComponent<AudioListener>();
+
+            this._musicSources = new AudioSource[2];
+            this._musicSources[0] = this.gameObject.AddComponent<AudioSource>();
+            this._musicSources[1] = this.gameObject.AddComponent<AudioSource>();
+            this._musicHead = 0;
+
             if (this.loadFromResources)
                 LoadResourceSounds();
             LoadPrefabSounds();
@@ -79,7 +101,7 @@ namespace PofyTools.Sound
 
         void LoadPrefabSounds()
         {
-            this._musicSource = this.gameObject.AddComponent<AudioSource>();
+            
             if (this.music != null)
             {
                 this._musicSource.clip = this.music;
@@ -156,8 +178,30 @@ namespace PofyTools.Sound
 
         public static void PlayCustomMusic(AudioClip newMusic)
         {
-            Sounds._musicSource.clip = newMusic;
-            Sounds._musicSource.Play();
+            //set up the other music source
+            var source = Sounds._musicSources[1 - Sounds._musicHead];
+
+            source.clip = newMusic;
+            source.loop = true;
+
+
+            if (Sounds.crossMixMusic)
+            {
+                source.volume = 0;
+                source.Play();
+                Sounds.CrossMix(Sounds.crossMixDuration);
+            }
+            else
+            {
+                if (Sounds._musicSource.isPlaying)
+                    Sounds._musicSource.Stop();
+
+                source.volume = Sounds.masterVolume * Sounds.musicVolume;
+                Sounds._musicHead = 1 - Sounds._musicHead;
+                Sounds._musicSource.Play();
+            }
+
+
         }
 
         //Plays clip that is not in manager's dictionary
@@ -207,6 +251,8 @@ namespace PofyTools.Sound
 
             source.Play();
 
+            if (Sounds.duckMusicOnSound)
+                DuckMusicOnSound(clip);
             return source;
         }
 
@@ -308,13 +354,7 @@ namespace PofyTools.Sound
         private float _soundDuckingDuration;
 
 
-        public static bool isMusicDucked
-        {
-            get
-            {
-                return Sounds._musicSource.volume == Sounds._musicDuckingVolume;
-            }
-        }
+        public static bool isMusicDucked = false;
 
         public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f)
         {
@@ -322,7 +362,7 @@ namespace PofyTools.Sound
             DuckSound(duckToVolume, duckingDuration);
         }
 
-        public static void DuckMusic(float duckToVolume = 0f, float duckingDuration = 0.5f)
+        public static void DuckMusic(float duckToVolume = 0f, float duckingDuration = 0.5f, bool onSound = false)
         {
             Sounds.StopCoroutine(Sounds.DuckMusic());
 
@@ -330,7 +370,10 @@ namespace PofyTools.Sound
             Sounds._musicDuckingDuration = duckingDuration;
             Sounds._musicDuckingTimer = duckingDuration;
 
-            Sounds.StartCoroutine(Sounds.DuckMusic());
+            if (!onSound)
+                Sounds.StartCoroutine(Sounds.DuckMusic());
+            else
+                Sounds.StartCoroutine(Sounds.DuckMusicOnSound());
         }
 
         public static void DuckSound(float duckToVolume = 0f, float duckingDuration = 0.5f)
@@ -342,6 +385,13 @@ namespace PofyTools.Sound
             Sounds._soundDuckingTimer = duckingDuration;
 
             Sounds.StartCoroutine(Sounds.DuckSound());
+        }
+
+        IEnumerator DuckMusicOnSound()
+        {
+            yield return DuckMusic();
+            yield return new WaitForSeconds(this._duckOnSoundDuration - this.duckOnSoundTransitionDuration);
+            DuckMusic(1);
         }
 
         IEnumerator DuckMusic()
@@ -356,6 +406,18 @@ namespace PofyTools.Sound
                 this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._musicDuckingVolume, normalizedTime);
                 yield return null;
             }
+            //Restore on sound end
+        }
+
+        private float _duckOnSoundDuration = 0;
+
+        public static void DuckMusicOnSound(AudioClip sound)
+        {
+            Sounds.StopCoroutine(Sounds.DuckMusic());
+
+            Sounds._duckOnSoundDuration = sound.length;
+
+            DuckMusic(Sounds.duckOnSoundVolume, Sounds.duckOnSoundTransitionDuration);
         }
 
         IEnumerator DuckSound()
@@ -371,6 +433,45 @@ namespace PofyTools.Sound
                 {
                     source.volume = Mathf.Lerp(source.volume, this._soundDuckingVolume, normalizedTime);
                 }
+                yield return null;
+            }
+        }
+
+        #endregion
+
+        #region Cross-Mixing
+
+        private float _crossMixDuration, _crossMixTimer;
+        private AudioSource _currentMusicSource, _targetMusicSource;
+
+        private void CrossMix(float duration)
+        {
+            StopCoroutine(this.CrossMix());
+
+            this._crossMixDuration = duration;
+            this._crossMixTimer = duration;
+
+            this._currentMusicSource = this._musicSources[this._musicHead];
+            this._targetMusicSource = this._musicSources[1 - this._musicHead];
+            this._musicHead = 1 - this._musicHead;
+
+            StartCoroutine(this.CrossMix());
+        }
+
+        private IEnumerator CrossMix()
+        {
+            while (this._crossMixTimer > 0)
+            {
+                this._crossMixTimer -= Time.unscaledDeltaTime;
+
+                if (this._crossMixTimer < 0)
+                    this._crossMixTimer = 0;
+
+                float normalizedTime = 1 - this._crossMixTimer / this._crossMixDuration;
+
+                this._currentMusicSource.volume = (1 - normalizedTime) * this.masterVolume * this.musicVolume;
+                this._targetMusicSource.volume = normalizedTime * this.masterVolume * this.musicVolume;
+
                 yield return null;
             }
         }
