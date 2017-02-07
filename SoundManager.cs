@@ -1,507 +1,493 @@
 ﻿
 namespace PofyTools.Sound
 {
-	using UnityEngine;
-	using System.Collections;
-	using System.Collections.Generic;
+    using UnityEngine;
+    using System.Collections;
+    using System.Collections.Generic;
 
-	//	[RequireComponent (typeof(AudioListener))]
-	public class SoundManager : MonoBehaviour, IDictionary<string,AudioClip>
-	{
-		public const string TAG = "<color=red><b><i>SoundManager: </i></b></color>";
+    //	[RequireComponent (typeof(AudioListener))]
+    public class SoundManager : MonoBehaviour, IDictionary<string,AudioClip>
+    {
+        public const string TAG = "<color=red><b><i>SoundManager: </i></b></color>";
 
-		public static SoundManager Sounds;
+        public static SoundManager Sounds;
 
-		[Header("Sounds")]
-		public AudioClip[] clips;
+        [Header("Sounds")]
+        public AudioClip[] clips;
 
-		public int voices = 1;
-		private int _head = 0;
-		public Range volumeVariationRange = new Range(0.9f, 1), pitchVariationRange = new Range(0.95f, 1.05f);
+        public int voices = 1;
+        private int _head = 0;
+        public Range volumeVariationRange = new Range(0.9f, 1), pitchVariationRange = new Range(0.95f, 1.05f);
 
-		public AudioListener audioListener{ get; private set; }
+        public AudioListener audioListener{ get; private set; }
 
-		private List<AudioSource> _sources;
+        private List<AudioSource> _sources;
 
-		[Header("Music")]
-		public AudioClip music;
+        [Header("Music")]
+        public AudioClip music;
 
-		private AudioSource _musicSource;
-		[Range(0, 1)]public float musicVolume = 1;
+        private AudioSource _musicSource;
+        [Range(0, 1)]public float musicVolume = 1;
 
-		[Header("Master")]
-		[Range(0, 1)]public float masterVolume = 1;
-		public bool dockMusicOnSound = false;
+        [Header("Master")]
+        [Range(0, 1)]public float masterVolume = 1;
+        public bool dockMusicOnSound = false;
 
-		[Header("Resources")]
-		public string resourcePath = "Sound";
-		public bool loadFromResources = true;
-		private Dictionary<string,AudioClip> _dictionary;
+        [Header("Resources")]
+        public string resourcePath = "Sound";
+        public bool loadFromResources = true;
+        private Dictionary<string,AudioClip> _dictionary;
 
-		void Awake()
-		{
-			if (Sounds == null)
-			{
-				Sounds = this;
-				Initialize();
-				DontDestroyOnLoad(this.gameObject);
-			}
-			else if (Sounds != this)
-			{
-				Destroy(this.gameObject);
-			}
-		}
+        void Awake()
+        {
+            if (Sounds == null)
+            {
+                Sounds = this;
+                Initialize();
+                DontDestroyOnLoad(this.gameObject);
+            }
+            else if (Sounds != this)
+            {
+                Destroy(this.gameObject);
+            }
+        }
 
-		void Initialize()
-		{
-			this.audioListener = GetComponent<AudioListener>();
-			if (this.loadFromResources)
-				LoadResourceSounds();
-			LoadPrefabSounds();
-		}
+        void Initialize()
+        {
+            this.audioListener = GetComponent<AudioListener>();
+            if (this.loadFromResources)
+                LoadResourceSounds();
+            LoadPrefabSounds();
+        }
 
-		void LoadResourceSounds()
-		{
-			AudioClip[] resourceClips = Resources.LoadAll<AudioClip>(this.resourcePath);
+        void LoadResourceSounds()
+        {
+            AudioClip[] resourceClips = Resources.LoadAll<AudioClip>(this.resourcePath);
 
-			this._dictionary = new Dictionary<string, AudioClip>(resourceClips.Length + this.clips.Length);
+            this._dictionary = new Dictionary<string, AudioClip>(resourceClips.Length + this.clips.Length);
 
-			foreach (var clip in resourceClips)
-			{
-				this[clip.name] = clip;
-			}
-		}
+            foreach (var clip in resourceClips)
+            {
+                this[clip.name] = clip;
+            }
+        }
 
-		void LoadPrefabSounds()
-		{
-			this._musicSource = this.gameObject.AddComponent<AudioSource>();
-			if (this.music != null)
-			{
-				this._musicSource.clip = this.music;
+        void LoadPrefabSounds()
+        {
+            this._musicSource = this.gameObject.AddComponent<AudioSource>();
+            if (this.music != null)
+            {
+                this._musicSource.clip = this.music;
 
-				this._musicSource.loop = true;
-				this._musicSource.volume = this.musicVolume;
-			}
+                this._musicSource.loop = true;
+                this._musicSource.volume = this.musicVolume;
+            }
 
-			if (this._dictionary == null)
-				this._dictionary = new Dictionary<string, AudioClip>(this.clips.Length);
+            if (this._dictionary == null)
+                this._dictionary = new Dictionary<string, AudioClip>(this.clips.Length);
 			
-			this._sources = new List<AudioSource>(voices);
-			for (int i = 0; i < this.voices; ++i)
-			{
-				this._sources.Add(this.gameObject.AddComponent<AudioSource>());
-			}
+            this._sources = new List<AudioSource>(voices);
+            for (int i = 0; i < this.voices; ++i)
+            {
+                this._sources.Add(this.gameObject.AddComponent<AudioSource>());
+            }
 
-			for (int i = this.clips.Length - 1; i >= 0; --i)
-			{
-				this._dictionary[this.clips[i].name] = this.clips[i];
-			}
-		}
+            for (int i = this.clips.Length - 1; i >= 0; --i)
+            {
+                this._dictionary[this.clips[i].name] = this.clips[i];
+            }
+        }
 
-		#region Play
+        #region Play
 
-		public static AudioSource Play(string clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
-		{
-			AudioClip audioClip = Sounds[clip];
-			return PlayOnAvailableSource(audioClip, volume, pitch, loop, lowPriority);
+        public static AudioSource Play(string clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
+        {
+            AudioClip audioClip = Sounds[clip];
+            return PlayOnAvailableSource(audioClip, volume, pitch, loop, lowPriority);
 
-		}
+        }
 
-		public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
-		{
-			return PlayOnAvailableSource(clip, volume, pitch, loop, lowPriority);
-		}
+        public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
+        {
+            return PlayOnAvailableSource(clip, volume, pitch, loop, lowPriority);
+        }
 			
-		//plays a clip with pitch/volume variation
-		public static AudioSource PlayVariation(string clip, bool loop = false, bool lowPriority = false)
-		{
-			return Play(clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
-		}
+        //plays a clip with pitch/volume variation
+        public static AudioSource PlayVariation(string clip, bool loop = false, bool lowPriority = false)
+        {
+            return Play(clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
+        }
 
-		//plays a clip with pitch/volume variation
-		public static AudioSource PlayVariation(AudioClip clip, bool loop = false, bool lowPriority = false)
-		{
-			return Play(clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
-		}
+        //plays a clip with pitch/volume variation
+        public static AudioSource PlayVariation(AudioClip clip, bool loop = false, bool lowPriority = false)
+        {
+            return Play(clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
+        }
 
-		public static AudioSource PlayRandomFrom(params string[]clips)
-		{
-			return PlayVariation(clips[Random.Range(0, clips.Length)]);
-		}
+        public static AudioSource PlayRandomFrom(params string[]clips)
+        {
+            return PlayVariation(clips[Random.Range(0, clips.Length)]);
+        }
 
-		public static AudioSource PlayRandomFrom(List<string> list)
-		{
-			return PlayVariation(list[Random.Range(0, list.Count)]);
-		}
+        public static AudioSource PlayRandomFrom(List<string> list)
+        {
+            return PlayVariation(list[Random.Range(0, list.Count)]);
+        }
 
-		public static AudioSource PlayRandomCustom(params AudioClip[]clips)
-		{
-			return PlayVariation(clips[Random.Range(0, clips.Length)]);
-		}
+        public static AudioSource PlayRandomCustom(params AudioClip[]clips)
+        {
+            return PlayVariation(clips[Random.Range(0, clips.Length)]);
+        }
 
-		public static void PlayMusic()
-		{
-			Sounds._musicSource.Play();
-		}
+        public static void PlayMusic()
+        {
+            Sounds._musicSource.Play();
+        }
 
-		public static bool IsMusicPlaying()
-		{
-			return Sounds._musicSource.isPlaying;
-		}
+        public static bool IsMusicPlaying()
+        {
+            return Sounds._musicSource.isPlaying;
+        }
 
-		public static void PlayCustomMusic(AudioClip newMusic)
-		{
-			Sounds._musicSource.clip = newMusic;
-			Sounds._musicSource.Play();
-		}
+        public static void PlayCustomMusic(AudioClip newMusic)
+        {
+            Sounds._musicSource.clip = newMusic;
+            Sounds._musicSource.Play();
+        }
 
-		//Plays clip that is not in manager's dictionary
-		private static AudioSource PlayOnAvailableSource(AudioClip clip, float volume = 1, float pitch = 1, bool loop = false, bool lowPriority = false)
-		{
-			AudioSource source = Sounds._sources[Sounds._head];
-			int startHeadPosition = Sounds._head;
+        //Plays clip that is not in manager's dictionary
+        private static AudioSource PlayOnAvailableSource(AudioClip clip, float volume = 1, float pitch = 1, bool loop = false, bool lowPriority = false)
+        {
+            AudioSource source = Sounds._sources[Sounds._head];
+            int startHeadPosition = Sounds._head;
 
-			while (source.isPlaying)
-			{
-				Sounds._head++;
-				if (Sounds._head == Sounds._sources.Count)
-				{
-					Sounds._head = 0;
-				}
-				source = Sounds._sources[Sounds._head];
+            while (source.isPlaying)
+            {
+                Sounds._head++;
+                if (Sounds._head == Sounds._sources.Count)
+                {
+                    Sounds._head = 0;
+                }
+                source = Sounds._sources[Sounds._head];
 
-				if (Sounds._head == startHeadPosition)
-				{
-					if (lowPriority)
-					{
-						return null;
-					}
+                if (Sounds._head == startHeadPosition)
+                {
+                    if (lowPriority)
+                    {
+                        return null;
+                    }
 
-					while (source.loop)
-					{
-						Sounds._head++;
-						if (Sounds._head == Sounds._sources.Count)
-						{
-							Sounds._head = 0;
-						}
-						source = Sounds._sources[Sounds._head];
-						Debug.Log(Sounds._head);
-						if (Sounds._head == startHeadPosition)
-						{
-							break;
-						}
-					}
-					break;
-				}
-			}
+                    while (source.loop)
+                    {
+                        Sounds._head++;
+                        if (Sounds._head == Sounds._sources.Count)
+                        {
+                            Sounds._head = 0;
+                        }
+                        source = Sounds._sources[Sounds._head];
+                        Debug.Log(Sounds._head);
+                        if (Sounds._head == startHeadPosition)
+                        {
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
 
-			source.clip = clip;
-			source.volume = volume * Sounds.masterVolume;
-			source.pitch = pitch;
-			source.loop = loop;
+            source.clip = clip;
+            source.volume = volume * Sounds.masterVolume;
+            source.pitch = pitch;
+            source.loop = loop;
 
-			source.Play();
+            source.Play();
 
-			return source;
-		}
+            return source;
+        }
 
-		#endregion
+        #endregion
 
-		#region Mute
+        #region Mute
 
-		public static void MuteAll()
-		{
-			MuteSound(true);
-			MuteMusic(true);
-		}
+        public static void MuteAll()
+        {
+            MuteSound(true);
+            MuteMusic(true);
+        }
 
-		public static void UnMuteAll()
-		{
-			MuteSound(false);
-			MuteMusic(false);
-		}
+        public static void UnMuteAll()
+        {
+            MuteSound(false);
+            MuteMusic(false);
+        }
 
-		public static void MuteSound(bool mute = true)
-		{
-			for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
-			{
-				var source = Sounds._sources[i];
-				source.mute = mute;
-			}
-		}
+        public static void MuteSound(bool mute = true)
+        {
+            for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
+            {
+                var source = Sounds._sources[i];
+                source.mute = mute;
+            }
+        }
 
-		public static void MuteMusic(bool mute = true)
-		{
-			Sounds._musicSource.mute = mute;
-		}
+        public static void MuteMusic(bool mute = true)
+        {
+            Sounds._musicSource.mute = mute;
+        }
 
-		public static void PauseAll()
-		{
+        public static void PauseAll()
+        {
 			
-			PauseMusic();
-			PauseSound();
-		}
+            PauseMusic();
+            PauseSound();
+        }
 
-		public static void PauseMusic()
-		{
-			Sounds._musicSource.Pause();
-		}
+        public static void PauseMusic()
+        {
+            Sounds._musicSource.Pause();
+        }
 
-		public static void PauseSound()
-		{
-			for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
-			{
-				var source = Sounds._sources[i];
-				source.Pause();
-			}
-		}
+        public static void PauseSound()
+        {
+            for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
+            {
+                var source = Sounds._sources[i];
+                source.Pause();
+            }
+        }
 
-		public static void ResumeAll()
-		{
-			ResumeMusic();
-			ResumeSound();
-		}
+        public static void ResumeAll()
+        {
+            ResumeMusic();
+            ResumeSound();
+        }
 
-		public static void ResumeMusic()
-		{
-			Sounds._musicSource.UnPause();
-		}
+        public static void ResumeMusic()
+        {
+            Sounds._musicSource.UnPause();
+        }
 
-		public static void ResumeSound()
-		{
-			for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
-			{
-				var source = Sounds._sources[i];
-				source.UnPause();
-			}
-		}
+        public static void ResumeSound()
+        {
+            for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
+            {
+                var source = Sounds._sources[i];
+                source.UnPause();
+            }
+        }
 
-		public static void StopAll()
-		{
-			Sounds._musicSource.Stop();
+        public static void StopAll()
+        {
+            Sounds._musicSource.Stop();
 			
-			for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
-			{
-				var source = Sounds._sources[i];
-				source.Stop();
-				source.loop = false;
-			}
-		}
+            for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
+            {
+                var source = Sounds._sources[i];
+                source.Stop();
+                source.loop = false;
+            }
+        }
 
-		#endregion
+        #endregion
 
-		#region Docking
+        #region Ducking
 
-		private float _dockVolume;
-		private float _dockingTimer;
-		private float _dockingDuration;
+        //Music Ducking
+        private float _musicDuckingVolume;
+        private float _musicDuckingTimer;
+        private float _musicDuckingDuration;
 
-		public static bool isDocked
-		{
-			get
-			{
-				return Sounds._musicSource.volume == Sounds._dockVolume;
-			}
-		}
+        //Sound Ducking
+        private float _soundDuckingVolume;
+        private float _soundDuckingTimer;
+        private float _soundDuckingDuration;
 
-		public static void DockAll(float dockToVolume = 1f, float dockingDuration = 0.5f)
-		{
-			Sounds.StopAllCoroutines();
 
-			Sounds._dockVolume = dockToVolume;
-			Sounds._dockingDuration = dockingDuration;
-			Sounds._dockingTimer = dockingDuration;
+        public static bool isMusicDucked
+        {
+            get
+            {
+                return Sounds._musicSource.volume == Sounds._musicDuckingVolume;
+            }
+        }
 
-			Sounds.StartCoroutine(Sounds.DockAll());
-		}
+        public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f)
+        {
+            
 
-		public static void DockMusic(float dockToVolume = 0f, float dockingDuration = 0.5f)
-		{
-			Sounds.StopAllCoroutines();
 
-			Sounds._dockVolume = dockToVolume;
-			Sounds._dockingDuration = dockingDuration;
-			Sounds._dockingTimer = dockingDuration;
+            DuckMusic(duckToVolume, duckingDuration);
+            DuckSound(duckToVolume, duckingDuration);
+        }
 
-			Sounds.StartCoroutine(Sounds.DockMusic());
-		}
+        public static void DuckMusic(float duckToVolume = 0f, float duckingDuration = 0.5f)
+        {
+            Sounds.StopCoroutine(Sounds.DuckMusic());
 
-		public static void DockSound(float dockToVolume = 0f, float dockingDuration = 0.5f)
-		{
-			Sounds.StopAllCoroutines();
+            Sounds._musicDuckingVolume = duckToVolume;
+            Sounds._musicDuckingDuration = duckingDuration;
+            Sounds._musicDuckingTimer = duckingDuration;
 
-			Sounds._dockVolume = dockToVolume;
-			Sounds._dockingDuration = dockingDuration;
-			Sounds._dockingTimer = dockingDuration;
+            Sounds.StartCoroutine(Sounds.DuckMusic());
+        }
 
-			Sounds.StartCoroutine(Sounds.DockSounds());
-		}
+        public static void DuckSound(float duckToVolume = 0f, float duckingDuration = 0.5f)
+        {
+            Sounds.StopCoroutine(Sounds.DuckSound());
 
-		IEnumerator DockAll()
-		{
-			while (this._dockingTimer > 0)
-			{
-				this._dockingTimer -= Time.unscaledDeltaTime;
-				if (this._dockingTimer < 0)
-					this._dockingTimer = 0;
+            Sounds._soundDuckingVolume = duckToVolume;
+            Sounds._soundDuckingDuration = duckingDuration;
+            Sounds._soundDuckingTimer = duckingDuration;
 
-				float normalizedTime = 1 - this._dockingTimer / this._dockingDuration;
-				this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._dockVolume, normalizedTime);
+            Sounds.StartCoroutine(Sounds.DuckSound());
+        }
 
-				foreach (var source in this._sources)
-				{
-					source.volume = Mathf.Lerp(source.volume, this._dockVolume, normalizedTime);
-				}
-				yield return null;
-			}
-		}
+        IEnumerator DuckMusic()
+        {
+            while (this._musicDuckingTimer > 0)
+            {
+                this._musicDuckingTimer -= Time.unscaledDeltaTime;
+                if (this._musicDuckingTimer < 0)
+                    this._musicDuckingTimer = 0;
 
-		IEnumerator DockMusic()
-		{
-			while (this._dockingTimer > 0)
-			{
-				this._dockingTimer -= Time.unscaledDeltaTime;
-				if (this._dockingTimer < 0)
-					this._dockingTimer = 0;
+                float normalizedTime = 1 - this._musicDuckingTimer / this._musicDuckingDuration;
+                this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._musicDuckingVolume, normalizedTime);
+                yield return null;
+            }
+        }
 
-				float normalizedTime = 1 - this._dockingTimer / this._dockingDuration;
-				this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._dockVolume, normalizedTime);
-				yield return null;
-			}
-		}
+        IEnumerator DuckSound()
+        {
+            while (this._soundDuckingTimer > 0)
+            {
+                this._soundDuckingTimer -= Time.unscaledDeltaTime;
+                if (this._soundDuckingTimer < 0)
+                    this._soundDuckingTimer = 0;
 
-		IEnumerator DockSounds()
-		{
-			while (this._dockingTimer > 0)
-			{
-				this._dockingTimer -= Time.unscaledDeltaTime;
-				if (this._dockingTimer < 0)
-					this._dockingTimer = 0;
+                float normalizedTime = 1 - this._soundDuckingTimer / this._soundDuckingDuration;
+                foreach (var source in this._sources)
+                {
+                    source.volume = Mathf.Lerp(source.volume, this._soundDuckingVolume, normalizedTime);
+                }
+                yield return null;
+            }
+        }
 
-				float normalizedTime = 1 - this._dockingTimer / this._dockingDuration;
-				foreach (var source in this._sources)
-				{
-					source.volume = Mathf.Lerp(source.volume, this._dockVolume, normalizedTime);
-				}
-				yield return null;
-			}
-		}
+        #endregion
 
-		#endregion
+        #region IDictionary implementation
 
-		#region IDictionary implementation
+        public bool ContainsKey(string key)
+        {
+            return this._dictionary.ContainsKey(key);
+        }
 
-		public bool ContainsKey(string key)
-		{
-			return this._dictionary.ContainsKey(key);
-		}
+        public void Add(string key, AudioClip value)
+        {
+            this._dictionary.Add(key, value);
+        }
 
-		public void Add(string key, AudioClip value)
-		{
-			this._dictionary.Add(key, value);
-		}
+        public bool Remove(string key)
+        {
+            return this._dictionary.Remove(key);
+        }
 
-		public bool Remove(string key)
-		{
-			return this._dictionary.Remove(key);
-		}
+        public bool TryGetValue(string key, out AudioClip value)
+        {
+            return this._dictionary.TryGetValue(key, out value);
+        }
 
-		public bool TryGetValue(string key, out AudioClip value)
-		{
-			return this._dictionary.TryGetValue(key, out value);
-		}
+        public AudioClip this [string index]
+        {
+            get
+            {
+                return this._dictionary[index];
+            }
+            set
+            {
+                this._dictionary[index] = value;
+            }
+        }
 
-		public AudioClip this [string index]
-		{
-			get
-			{
-				return this._dictionary[index];
-			}
-			set
-			{
-				this._dictionary[index] = value;
-			}
-		}
+        public ICollection<string> Keys
+        {
+            get
+            {
+                return this._dictionary.Keys;
+            }
+        }
 
-		public ICollection<string> Keys
-		{
-			get
-			{
-				return this._dictionary.Keys;
-			}
-		}
+        public ICollection<AudioClip> Values
+        {
+            get
+            {
+                return this._dictionary.Values;
+            }
+        }
 
-		public ICollection<AudioClip> Values
-		{
-			get
-			{
-				return this._dictionary.Values;
-			}
-		}
+        #endregion
 
-		#endregion
+        #region ICollection implementation
 
-		#region ICollection implementation
+        public void Add(KeyValuePair<string, AudioClip> item)
+        {
+            throw new System.NotImplementedException();
+        }
 
-		public void Add(KeyValuePair<string, AudioClip> item)
-		{
-			throw new System.NotImplementedException();
-		}
+        public void Clear()
+        {
+            this._dictionary.Clear();
+        }
 
-		public void Clear()
-		{
-			this._dictionary.Clear();
-		}
+        public bool Contains(KeyValuePair<string, AudioClip> item)
+        {
+            throw new System.NotImplementedException();
+        }
 
-		public bool Contains(KeyValuePair<string, AudioClip> item)
-		{
-			throw new System.NotImplementedException();
-		}
+        public void CopyTo(KeyValuePair<string, AudioClip>[] array, int arrayIndex)
+        {
+            throw new System.NotImplementedException();
+        }
 
-		public void CopyTo(KeyValuePair<string, AudioClip>[] array, int arrayIndex)
-		{
-			throw new System.NotImplementedException();
-		}
+        public bool Remove(KeyValuePair<string, AudioClip> item)
+        {
+            throw new System.NotImplementedException();
+        }
 
-		public bool Remove(KeyValuePair<string, AudioClip> item)
-		{
-			throw new System.NotImplementedException();
-		}
+        public int Count
+        {
+            get
+            {
+                return this._dictionary.Count;
+            }
+        }
 
-		public int Count
-		{
-			get
-			{
-				return this._dictionary.Count;
-			}
-		}
+        public bool IsReadOnly
+        {
+            get
+            {
+                return true;
+            }
+        }
 
-		public bool IsReadOnly
-		{
-			get
-			{
-				return true;
-			}
-		}
+        #endregion
 
-		#endregion
+        #region IEnumerable implementation
 
-		#region IEnumerable implementation
+        public IEnumerator<KeyValuePair<string, AudioClip>> GetEnumerator()
+        {
+            return this._dictionary.GetEnumerator();
+        }
 
-		public IEnumerator<KeyValuePair<string, AudioClip>> GetEnumerator()
-		{
-			return this._dictionary.GetEnumerator();
-		}
+        #endregion
 
-		#endregion
+        #region IEnumerable implementation
 
-		#region IEnumerable implementation
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this._dictionary.GetEnumerator();
+        }
 
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return this._dictionary.GetEnumerator();
-		}
-
-		#endregion
-	}
+        #endregion
+    }
 }
