@@ -85,7 +85,7 @@ namespace PofyTools.Sound
                 this._musicSource.clip = this.music;
 
                 this._musicSource.loop = true;
-                this._musicSource.volume = this.musicVolume;
+                this._musicSource.volume = this.musicVolume * this.masterVolume;
             }
 
             if (this._dictionary == null)
@@ -318,9 +318,6 @@ namespace PofyTools.Sound
 
         public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f)
         {
-            
-
-
             DuckMusic(duckToVolume, duckingDuration);
             DuckSound(duckToVolume, duckingDuration);
         }
@@ -329,7 +326,7 @@ namespace PofyTools.Sound
         {
             Sounds.StopCoroutine(Sounds.DuckMusic());
 
-            Sounds._musicDuckingVolume = duckToVolume;
+            Sounds._musicDuckingVolume = duckToVolume * Sounds.musicVolume * Sounds.masterVolume;
             Sounds._musicDuckingDuration = duckingDuration;
             Sounds._musicDuckingTimer = duckingDuration;
 
@@ -340,7 +337,7 @@ namespace PofyTools.Sound
         {
             Sounds.StopCoroutine(Sounds.DuckSound());
 
-            Sounds._soundDuckingVolume = duckToVolume;
+            Sounds._soundDuckingVolume = duckToVolume * Sounds.masterVolume;
             Sounds._soundDuckingDuration = duckingDuration;
             Sounds._soundDuckingTimer = duckingDuration;
 
