@@ -27,7 +27,7 @@ Make sure to remove all other `AudioListener` components from other objects in t
 - If you want to use music ducking automaticly on every sound, tick `public bool duckMusicOnSound` checkbox.
 Music will duck to `public float duckOnSoundVolume`. Use `public float duckOnSoundTransitionDuration` to specify how fast will music duck.
 - `[Range(0, 1)]public float musicVolume` and `[Range(0, 1)]public float masterVolume` are used to control global sound and music volume.
-- 
+
 
 ##Use
 
