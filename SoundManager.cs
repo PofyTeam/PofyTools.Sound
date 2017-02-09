@@ -358,6 +358,16 @@ namespace PofyTools.Sound
             get { return !(Sounds._musicSource.volume > Sounds._musicDuckingVolume); }
         }
 
+        public static void FadeIn(float duration)
+        {
+            DuckAll(1, duration);
+        }
+
+        public static void FadeOut(float duration)
+        {
+            DuckAll(0, duration);
+        }
+
         public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f)
         {
             DuckMusic(duckToVolume, duckingDuration);
