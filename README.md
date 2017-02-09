@@ -10,7 +10,7 @@ Sound Manager for Unity. Requires PofyTools.Core component.
 #How To Use
 
 ##Setup
-1. Add `PofyTools.Sound` and `PofyTools.Core` files to your Unity project ([You can find Core here.(https://github.com/PofyTeam/PofyTools.Core "PofyTools.Core")).
+1. Add `PofyTools.Sound` and `PofyTools.Core` files to your Unity project ([You can find Core here.](https://github.com/PofyTeam/PofyTools.Core "PofyTools.Core")).
 2. Attach `SoundManager` script to a new Empty `GameObject` (or existing persisting `GameObject`).
 3. `SoundManager` has `[RequireComponent(typeof(AudioListener))]` and will add `AudioListener` component to it's `GameObject` if not present.
 Make sure to remove all other `AudioListener` components from other objects in the scene (by default object with `Camera` component has one). 
