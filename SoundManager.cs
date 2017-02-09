@@ -5,7 +5,7 @@ namespace PofyTools.Sound
     using System.Collections;
     using System.Collections.Generic;
 
-    //	[RequireComponent (typeof(AudioListener))]
+    [RequireComponent(typeof(AudioListener))]
     public class SoundManager : MonoBehaviour, IDictionary<string,AudioClip>
     {
         public const string TAG = "<color=red><b><i>SoundManager: </i></b></color>";
@@ -30,7 +30,6 @@ namespace PofyTools.Sound
         public float crossMixDuration = 0.2f;
 
         public bool duckMusicOnSound;
-
         public float duckOnSoundTransitionDuration = 0.1f, duckOnSoundVolume = 0.2f;
 
         private AudioSource _musicSource
@@ -354,7 +353,10 @@ namespace PofyTools.Sound
         private float _soundDuckingDuration;
 
 
-        public static bool isMusicDucked = false;
+        public static bool IsMusicDucked
+        {
+            get { return !(Sounds._musicSource.volume > Sounds._musicDuckingVolume); }
+        }
 
         public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f)
         {
@@ -390,7 +392,7 @@ namespace PofyTools.Sound
         IEnumerator DuckMusicOnSound()
         {
             yield return DuckMusic();
-            yield return new WaitForSeconds(this._duckOnSoundDuration - this.duckOnSoundTransitionDuration);
+            yield return new WaitForSeconds(Mathf.Max(this._duckOnSoundDuration - this.duckOnSoundTransitionDuration, 0));
             DuckMusic(1);
         }
 
@@ -406,6 +408,7 @@ namespace PofyTools.Sound
                 this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._musicDuckingVolume, normalizedTime);
                 yield return null;
             }
+//            SoundManager.IsMusicDucked = this._musicSource.volume
             //Restore on sound end
         }
 
@@ -414,10 +417,11 @@ namespace PofyTools.Sound
         public static void DuckMusicOnSound(AudioClip sound)
         {
             Sounds.StopCoroutine(Sounds.DuckMusic());
+            Debug.Log(sound.length);
 
             Sounds._duckOnSoundDuration = sound.length;
 
-            DuckMusic(Sounds.duckOnSoundVolume, Sounds.duckOnSoundTransitionDuration);
+            DuckMusic(Sounds.duckOnSoundVolume, Sounds.duckOnSoundTransitionDuration, true);
         }
 
         IEnumerator DuckSound()
