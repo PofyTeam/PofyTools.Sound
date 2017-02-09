@@ -7,9 +7,9 @@ Sound Manager for Unity. Requires PofyTools.Core component.
 - Added Music Cross-Mixing
 - Added Automatic Music Ducking on Sound Playback
 
-#How To Use
+# How To Use
 
-##Setup
+## Setup
 1. Add `PofyTools.Sound` and `PofyTools.Core` files to your Unity project ([You can find Core here.](https://github.com/PofyTeam/PofyTools.Core "PofyTools.Core")).
 2. Attach `SoundManager` script to a new Empty `GameObject` (or existing persisting `GameObject`).
 3. `SoundManager` has `[RequireComponent(typeof(AudioListener))]` and will add `AudioListener` component to it's `GameObject` if not present.
@@ -19,7 +19,7 @@ Make sure to remove all other `AudioListener` components from other objects in t
 * Providing sound resource directory name to `public string resourcePath` and checking the `public bool loadFromResources` checkbox. All sounds found on this address will be added to manager's runtime Dictionary.
 * or you can use it without mapping resource, by using method overloads that take `AudioClip` as parameter.
 
-###More Options
+### More Options
 - Specify how many sounds can play simultaneously by setting `public int voices` in Inspector.
 - `public Range volumeVariationRange` and `public pitchVariationRange` settings are used for creating random variations in sound playback when using `PlayVariation` method.
 - `public AudioClip music` is used to specify default music. To start playing music call `PlayMusic` method.
@@ -76,7 +76,7 @@ public static bool IsMusicPlaying();
 public static void PlayCustomMusic(AudioClip newMusic);
 ```
 
-##Mute / Pause / Resume / Stop
+## Mute / Pause / Resume / Stop
 ```c#
 public static void MuteAll();
 
@@ -100,3 +100,23 @@ public static void ResumeSound();
 
 public static void StopAll();
 ```
+
+## Fading / Ducking / Cross-Mixing
+
+If you set `public bool crossMixMusic` to `true` Cross-Mixing will happen automaticly on every music track change using `public float crossMixDuration`.
+
+```c#
+public static bool IsMusicDucked{get;}
+
+public static void FadeIn(float duration);
+
+public static void FadeOut(float duration);
+
+public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f);
+
+public static void DuckMusic(float duckToVolume = 0f, float duckingDuration = 0.5f, bool onSound = false);
+
+public static void DuckSound(float duckToVolume = 0f, float duckingDuration = 0.5f);
+
+```
+

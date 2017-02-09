@@ -424,7 +424,7 @@ namespace PofyTools.Sound
 
         private float _duckOnSoundDuration = 0;
 
-        public static void DuckMusicOnSound(AudioClip sound)
+        private static void DuckMusicOnSound(AudioClip sound)
         {
             Sounds.StopCoroutine(Sounds.DuckMusic());
             Debug.Log(sound.length);
