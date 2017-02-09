@@ -3,7 +3,7 @@ Sound Manager for Unity. Requires PofyTools.Core component.
 
 ## Version 0.0.2 Changes
 - Added Music Ducking
-- 
+- Added Fade Utility methods
 - Added Music Cross-Mixing
 - Added Automatic Music Ducking on Sound Playback
 
