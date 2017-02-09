@@ -35,68 +35,68 @@ Music will duck to `public float duckOnSoundVolume`. Use `public float duckOnSou
 
 ### via AudioClip reference
 ```c#
-public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
+public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false);
 ```
 
 ### via Dictionary key
 ```c#
-public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
+public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false);
 ```
 
 ### Playing with variations (works with both AudioClip and string)
 ```c#
-public static AudioSource PlayVariation(string clip, bool loop = false, bool lowPriority = false)
+public static AudioSource PlayVariation(string clip, bool loop = false, bool lowPriority = false);
 
-public static AudioSource PlayVariation(AudioClip clip, bool loop = false, bool lowPriority = false)
+public static AudioSource PlayVariation(AudioClip clip, bool loop = false, bool lowPriority = false);
 ```
 
 ### Playing random sound from the group of sounds
 ```c#
-public static AudioSource PlayRandomFrom(params string[]clips)
+public static AudioSource PlayRandomFrom(params string[]clips);
 
-public static AudioSource PlayRandomFrom(List<string> list)
+public static AudioSource PlayRandomFrom(List<string> list);
 
-public static AudioSource PlayRandomCustom(params AudioClip[]clips)
+public static AudioSource PlayRandomCustom(params AudioClip[]clips);
 ```
 
 ## Play Music
 
 ### Play Default/Current Music Track
 ```c#
-public static void PlayMusic()
+public static void PlayMusic();
 ```
 
 ### Is Music Playing
 ```c#
-public static bool IsMusicPlaying()
+public static bool IsMusicPlaying();
 ```
 
 ### Setting New Music Track
 ```c#
-public static void PlayCustomMusic(AudioClip newMusic)
+public static void PlayCustomMusic(AudioClip newMusic);
 ```
 
 ##Mute / Pause / Resume / Stop
 ```c#
-public static void MuteAll()
+public static void MuteAll();
 
-public static void UnMuteAll()
+public static void UnMuteAll();
 
-public static void MuteSound(bool mute = true)
+public static void MuteSound(bool mute = true);
 
-public static void MuteMusic(bool mute = true)
+public static void MuteMusic(bool mute = true);
 
-public static void PauseAll()
+public static void PauseAll();
 
-public static void PauseMusic()
+public static void PauseMusic();
 
-public static void PauseSound()
+public static void PauseSound();
 
-public static void ResumeAll()
+public static void ResumeAll();
 
-public static void ResumeMusic()
+public static void ResumeMusic();
 
-public static void ResumeSound()
+public static void ResumeSound();
 
-public static void StopAll()
+public static void StopAll();
 ```
