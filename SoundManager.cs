@@ -140,9 +140,13 @@ namespace PofyTools.Sound
 
         public static AudioSource Play(string clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
         {
-            AudioClip audioClip = Sounds[clip];
-            return PlayOnAvailableSource(audioClip, volume, pitch, loop, lowPriority);
-
+            AudioClip audioClip = null;
+            if (Sounds.TryGetValue(clip, out audioClip))
+            {
+                return PlayOnAvailableSource(audioClip, volume, pitch, loop, lowPriority);
+            }
+            Debug.LogWarning(TAG + "Sound not found - " + clip);
+            return null;
         }
 
         public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
