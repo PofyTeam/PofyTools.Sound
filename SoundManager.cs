@@ -124,6 +124,18 @@ namespace PofyTools.Sound
             }
         }
 
+        void OnApplicationFocus(bool focus)
+        {
+            if (focus)
+            {
+                ResumeAll();
+            }
+            else
+            {
+                PauseAll();
+            }
+        }
+
         #region Play
 
         public static AudioSource Play(string clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
@@ -376,37 +388,37 @@ namespace PofyTools.Sound
 
         public static void DuckMusic(float duckToVolume = 0f, float duckingDuration = 0.5f, bool onSound = false)
         {
-            Sounds.StopCoroutine(Sounds.DuckMusic());
+            Sounds.StopCoroutine(Sounds.DuckMusicState());
 
             Sounds._musicDuckingVolume = duckToVolume * Sounds.musicVolume * Sounds.masterVolume;
             Sounds._musicDuckingDuration = duckingDuration;
             Sounds._musicDuckingTimer = duckingDuration;
 
             if (!onSound)
-                Sounds.StartCoroutine(Sounds.DuckMusic());
+                Sounds.StartCoroutine(Sounds.DuckMusicState());
             else
                 Sounds.StartCoroutine(Sounds.DuckMusicOnSound());
         }
 
         public static void DuckSound(float duckToVolume = 0f, float duckingDuration = 0.5f)
         {
-            Sounds.StopCoroutine(Sounds.DuckSound());
+            Sounds.StopCoroutine(Sounds.DuckSoundState());
 
             Sounds._soundDuckingVolume = duckToVolume * Sounds.masterVolume;
             Sounds._soundDuckingDuration = duckingDuration;
             Sounds._soundDuckingTimer = duckingDuration;
 
-            Sounds.StartCoroutine(Sounds.DuckSound());
+            Sounds.StartCoroutine(Sounds.DuckSoundState());
         }
 
         IEnumerator DuckMusicOnSound()
         {
-            yield return DuckMusic();
+            yield return DuckMusicState();
             yield return new WaitForSeconds(Mathf.Max(this._duckOnSoundDuration - this.duckOnSoundTransitionDuration, 0));
             DuckMusic(1);
         }
 
-        IEnumerator DuckMusic()
+        IEnumerator DuckMusicState()
         {
             while (this._musicDuckingTimer > 0)
             {
@@ -426,7 +438,7 @@ namespace PofyTools.Sound
 
         private static void DuckMusicOnSound(AudioClip sound)
         {
-            Sounds.StopCoroutine(Sounds.DuckMusic());
+            Sounds.StopCoroutine(Sounds.DuckMusicState());
             Debug.Log(sound.length);
 
             Sounds._duckOnSoundDuration = sound.length;
@@ -434,7 +446,7 @@ namespace PofyTools.Sound
             DuckMusic(Sounds.duckOnSoundVolume, Sounds.duckOnSoundTransitionDuration, true);
         }
 
-        IEnumerator DuckSound()
+        IEnumerator DuckSoundState()
         {
             while (this._soundDuckingTimer > 0)
             {
