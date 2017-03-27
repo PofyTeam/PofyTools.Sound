@@ -5,7 +5,7 @@ namespace PofyTools.Sound
     using System.Collections;
     using System.Collections.Generic;
 
-    [RequireComponent(typeof(AudioListener))]
+    //    [RequireComponent(typeof(AudioListener))]
     public class SoundManager : MonoBehaviour, IDictionary<string,AudioClip>
     {
         public const string TAG = "<color=red><b><i>SoundManager: </i></b></color>";
@@ -53,6 +53,9 @@ namespace PofyTools.Sound
         public bool loadFromResources = true;
         private Dictionary<string,AudioClip> _dictionary;
 
+        [Header("AudioListener")]
+        public bool attachAudioListener;
+
         void Awake()
         {
             if (Sounds == null)
@@ -74,7 +77,8 @@ namespace PofyTools.Sound
 
         void Initialize()
         {
-            this.audioListener = GetComponent<AudioListener>();
+            if (this.attachAudioListener)
+                this.audioListener = this.gameObject.AddComponent<AudioListener>();
 
             this._musicSources = new AudioSource[2];
             this._musicSources[0] = this.gameObject.AddComponent<AudioSource>();
