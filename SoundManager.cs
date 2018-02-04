@@ -447,7 +447,7 @@ namespace PofyTools.Sound
         private static void DuckMusicOnSound(AudioClip sound)
         {
             Sounds.StopCoroutine(Sounds.DuckMusicState());
-            Debug.Log(sound.length);
+            //Debug.Log(sound.length);
 
             Sounds._duckOnSoundDuration = sound.length;
 
