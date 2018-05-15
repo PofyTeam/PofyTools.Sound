@@ -6,24 +6,40 @@ namespace PofyTools.Sound
     using System.Collections.Generic;
 
     //    [RequireComponent(typeof(AudioListener))]
-    public class SoundManager : MonoBehaviour, IDictionary<string,AudioClip>
+    public class SoundManager : MonoBehaviour, IDictionary<string, AudioClip>
     {
         public const string TAG = "<color=red><b><i>SoundManager: </i></b></color>";
+        private static SoundManager _instance;
+        public static SoundManager Sounds
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<SoundManager> ();
+                    if (_instance == null)
+                        Debug.LogError (TAG + "No instance in the scene!");
+                    else
+                        _instance.Initialize ();
+                }
 
-        public static SoundManager Sounds;
+                return _instance;
+            }
+            private set { _instance = value; }
+        }
 
-        [Header("Sounds")]
+        [Header ("Sounds")]
         public AudioClip[] clips;
 
         public int voices = 1;
         private int _head = 0;
-        public Range volumeVariationRange = new Range(0.9f, 1), pitchVariationRange = new Range(0.95f, 1.05f);
+        public Range volumeVariationRange = new Range (0.9f, 1), pitchVariationRange = new Range (0.95f, 1.05f);
 
-        public AudioListener audioListener{ get; private set; }
+        public AudioListener audioListener { get; private set; }
 
         private List<AudioSource> _sources;
 
-        [Header("Music")]
+        [Header ("Music")]
         public AudioClip music;
 
         public bool crossMixMusic;
@@ -43,58 +59,60 @@ namespace PofyTools.Sound
         private AudioSource[] _musicSources;
         private int _musicHead = -1;
 
-        [Range(0, 1)]public float musicVolume = 1;
+        [Range (0, 1)] public float musicVolume = 1;
 
-        [Header("Master")]
-        [Range(0, 1)]public float masterVolume = 1;
+        [Header ("Master")]
+        [Range (0, 1)]
+        public float masterVolume = 1;
 
-        [Header("Resources")]
+        [Header ("Resources")]
         public string resourcePath = "Sound";
         public bool loadFromResources = true;
-        private Dictionary<string,AudioClip> _dictionary;
+        private Dictionary<string, AudioClip> _dictionary;
 
-        [Header("AudioListener")]
+        [Header ("AudioListener")]
         public bool attachAudioListener;
 
-        void Awake()
+        void Awake ()
         {
-            if (Sounds == null)
+            if (_instance == null)
             {
-                Sounds = this;
-                Initialize();
-                DontDestroyOnLoad(this.gameObject);
+                _instance = this;
+                Initialize ();
             }
             else if (Sounds != this)
             {
-                Destroy(this.gameObject);
+                Destroy (this.gameObject);
             }
         }
 
-        void OnDestroy()
+        void OnDestroy ()
         {
-            StopAllCoroutines();
+            StopAllCoroutines ();
         }
 
-        void Initialize()
+        void Initialize ()
         {
             if (this.attachAudioListener)
-                this.audioListener = this.gameObject.AddComponent<AudioListener>();
+                this.audioListener = this.gameObject.AddComponent<AudioListener> ();
 
             this._musicSources = new AudioSource[2];
-            this._musicSources[0] = this.gameObject.AddComponent<AudioSource>();
-            this._musicSources[1] = this.gameObject.AddComponent<AudioSource>();
+            this._musicSources[0] = this.gameObject.AddComponent<AudioSource> ();
+            this._musicSources[1] = this.gameObject.AddComponent<AudioSource> ();
             this._musicHead = 0;
 
             if (this.loadFromResources)
-                LoadResourceSounds();
-            LoadPrefabSounds();
+                LoadResourceSounds ();
+            LoadPrefabSounds ();
+
+            DontDestroyOnLoad (this.gameObject);
         }
 
-        void LoadResourceSounds()
+        void LoadResourceSounds ()
         {
-            AudioClip[] resourceClips = Resources.LoadAll<AudioClip>(this.resourcePath);
+            AudioClip[] resourceClips = Resources.LoadAll<AudioClip> (this.resourcePath);
 
-            this._dictionary = new Dictionary<string, AudioClip>(resourceClips.Length + this.clips.Length);
+            this._dictionary = new Dictionary<string, AudioClip> (resourceClips.Length + this.clips.Length);
 
             foreach (var clip in resourceClips)
             {
@@ -102,9 +120,9 @@ namespace PofyTools.Sound
             }
         }
 
-        void LoadPrefabSounds()
+        void LoadPrefabSounds ()
         {
-            
+
             if (this.music != null)
             {
                 this._musicSource.clip = this.music;
@@ -114,12 +132,12 @@ namespace PofyTools.Sound
             }
 
             if (this._dictionary == null)
-                this._dictionary = new Dictionary<string, AudioClip>(this.clips.Length);
-			
-            this._sources = new List<AudioSource>(voices);
+                this._dictionary = new Dictionary<string, AudioClip> (this.clips.Length);
+
+            this._sources = new List<AudioSource> (voices);
             for (int i = 0; i < this.voices; ++i)
             {
-                this._sources.Add(this.gameObject.AddComponent<AudioSource>());
+                this._sources.Add (this.gameObject.AddComponent<AudioSource> ());
             }
 
             for (int i = this.clips.Length - 1; i >= 0; --i)
@@ -128,74 +146,74 @@ namespace PofyTools.Sound
             }
         }
 
-        void OnApplicationFocus(bool focus)
+        void OnApplicationFocus (bool focus)
         {
             if (focus)
             {
-                ResumeAll();
+                ResumeAll ();
             }
             else
             {
-                PauseAll();
+                PauseAll ();
             }
         }
 
         #region Play
 
-        public static AudioSource Play(string clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
+        public static AudioSource Play (string clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
         {
             AudioClip audioClip = null;
-            if (Sounds.TryGetValue(clip, out audioClip))
+            if (Sounds.TryGetValue (clip, out audioClip))
             {
-                return PlayOnAvailableSource(audioClip, volume, pitch, loop, lowPriority);
+                return PlayOnAvailableSource (audioClip, volume, pitch, loop, lowPriority);
             }
-            Debug.LogWarning(TAG + "Sound not found - " + clip);
+            Debug.LogWarning (TAG + "Sound not found - " + clip);
             return null;
         }
 
-        public static AudioSource Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
+        public static AudioSource Play (AudioClip clip, float volume = 1f, float pitch = 1f, bool loop = false, bool lowPriority = false)
         {
-            return PlayOnAvailableSource(clip, volume, pitch, loop, lowPriority);
-        }
-			
-        //plays a clip with pitch/volume variation
-        public static AudioSource PlayVariation(string clip, bool loop = false, bool lowPriority = false)
-        {
-            return Play(clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
+            return PlayOnAvailableSource (clip, volume, pitch, loop, lowPriority);
         }
 
         //plays a clip with pitch/volume variation
-        public static AudioSource PlayVariation(AudioClip clip, bool loop = false, bool lowPriority = false)
+        public static AudioSource PlayVariation (string clip, bool loop = false, bool lowPriority = false)
         {
-            return Play(clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
+            return Play (clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
         }
 
-        public static AudioSource PlayRandomFrom(params string[]clips)
+        //plays a clip with pitch/volume variation
+        public static AudioSource PlayVariation (AudioClip clip, bool loop = false, bool lowPriority = false)
         {
-            return PlayVariation(clips[Random.Range(0, clips.Length)]);
+            return Play (clip, Sounds.volumeVariationRange.Random, Sounds.pitchVariationRange.Random, loop, lowPriority);
         }
 
-        public static AudioSource PlayRandomFrom(List<string> list)
+        public static AudioSource PlayRandomFrom (params string[] clips)
         {
-            return PlayVariation(list[Random.Range(0, list.Count)]);
+            return PlayVariation (clips[Random.Range (0, clips.Length)]);
         }
 
-        public static AudioSource PlayRandomCustom(params AudioClip[]clips)
+        public static AudioSource PlayRandomFrom (List<string> list)
         {
-            return PlayVariation(clips[Random.Range(0, clips.Length)]);
+            return PlayVariation (list[Random.Range (0, list.Count)]);
         }
 
-        public static void PlayMusic()
+        public static AudioSource PlayRandomCustom (params AudioClip[] clips)
         {
-            Sounds._musicSource.Play();
+            return PlayVariation (clips[Random.Range (0, clips.Length)]);
         }
 
-        public static bool IsMusicPlaying()
+        public static void PlayMusic ()
+        {
+            Sounds._musicSource.Play ();
+        }
+
+        public static bool IsMusicPlaying ()
         {
             return Sounds._musicSource.isPlaying;
         }
 
-        public static void PlayCustomMusic(AudioClip newMusic)
+        public static void PlayCustomMusic (AudioClip newMusic)
         {
             //set up the other music source
             var source = Sounds._musicSources[1 - Sounds._musicHead];
@@ -207,24 +225,24 @@ namespace PofyTools.Sound
             if (Sounds.crossMixMusic)
             {
                 source.volume = 0;
-                source.Play();
-                Sounds.CrossMix(Sounds.crossMixDuration);
+                source.Play ();
+                Sounds.CrossMix (Sounds.crossMixDuration);
             }
             else
             {
                 if (Sounds._musicSource.isPlaying)
-                    Sounds._musicSource.Stop();
+                    Sounds._musicSource.Stop ();
 
                 source.volume = Sounds.masterVolume * Sounds.musicVolume;
                 Sounds._musicHead = 1 - Sounds._musicHead;
-                Sounds._musicSource.Play();
+                Sounds._musicSource.Play ();
             }
 
 
         }
 
         //Plays clip that is not in manager's dictionary
-        private static AudioSource PlayOnAvailableSource(AudioClip clip, float volume = 1, float pitch = 1, bool loop = false, bool lowPriority = false)
+        private static AudioSource PlayOnAvailableSource (AudioClip clip, float volume = 1, float pitch = 1, bool loop = false, bool lowPriority = false)
         {
             AudioSource source = Sounds._sources[Sounds._head];
             int startHeadPosition = Sounds._head;
@@ -253,7 +271,7 @@ namespace PofyTools.Sound
                             Sounds._head = 0;
                         }
                         source = Sounds._sources[Sounds._head];
-                        Debug.Log(Sounds._head);
+                        Debug.Log (Sounds._head);
                         if (Sounds._head == startHeadPosition)
                         {
                             break;
@@ -268,10 +286,10 @@ namespace PofyTools.Sound
             source.pitch = pitch;
             source.loop = loop;
 
-            source.Play();
+            source.Play ();
 
             if (Sounds.duckMusicOnSound)
-                DuckMusicOnSound(clip);
+                DuckMusicOnSound (clip);
             return source;
         }
 
@@ -279,19 +297,19 @@ namespace PofyTools.Sound
 
         #region Mute
 
-        public static void MuteAll()
+        public static void MuteAll ()
         {
-            MuteSound(true);
-            MuteMusic(true);
+            MuteSound (true);
+            MuteMusic (true);
         }
 
-        public static void UnMuteAll()
+        public static void UnMuteAll ()
         {
-            MuteSound(false);
-            MuteMusic(false);
+            MuteSound (false);
+            MuteMusic (false);
         }
 
-        public static void MuteSound(bool mute = true)
+        public static void MuteSound (bool mute = true)
         {
             for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
             {
@@ -300,60 +318,60 @@ namespace PofyTools.Sound
             }
         }
 
-        public static void MuteMusic(bool mute = true)
+        public static void MuteMusic (bool mute = true)
         {
             Sounds._musicSource.mute = mute;
         }
 
-        public static void PauseAll()
+        public static void PauseAll ()
         {
-			
-            PauseMusic();
-            PauseSound();
+
+            PauseMusic ();
+            PauseSound ();
         }
 
-        public static void PauseMusic()
+        public static void PauseMusic ()
         {
-            Sounds._musicSource.Pause();
+            Sounds._musicSource.Pause ();
         }
 
-        public static void PauseSound()
+        public static void PauseSound ()
         {
             for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
             {
                 var source = Sounds._sources[i];
-                source.Pause();
+                source.Pause ();
             }
         }
 
-        public static void ResumeAll()
+        public static void ResumeAll ()
         {
-            ResumeMusic();
-            ResumeSound();
+            ResumeMusic ();
+            ResumeSound ();
         }
 
-        public static void ResumeMusic()
+        public static void ResumeMusic ()
         {
-            Sounds._musicSource.UnPause();
+            Sounds._musicSource.UnPause ();
         }
 
-        public static void ResumeSound()
+        public static void ResumeSound ()
         {
             for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
             {
                 var source = Sounds._sources[i];
-                source.UnPause();
+                source.UnPause ();
             }
         }
 
-        public static void StopAll()
+        public static void StopAll ()
         {
-            Sounds._musicSource.Stop();
-			
+            Sounds._musicSource.Stop ();
+
             for (int i = 0, Controller_sourcesCount = Sounds._sources.Count; i < Controller_sourcesCount; i++)
             {
                 var source = Sounds._sources[i];
-                source.Stop();
+                source.Stop ();
                 source.loop = false;
             }
         }
@@ -378,55 +396,55 @@ namespace PofyTools.Sound
             get { return !(Sounds._musicSource.volume > Sounds._musicDuckingVolume); }
         }
 
-        public static void FadeIn(float duration)
+        public static void FadeIn (float duration)
         {
-            DuckAll(1, duration);
+            DuckAll (1, duration);
         }
 
-        public static void FadeOut(float duration)
+        public static void FadeOut (float duration)
         {
-            DuckAll(0, duration);
+            DuckAll (0, duration);
         }
 
-        public static void DuckAll(float duckToVolume = 1f, float duckingDuration = 0.5f)
+        public static void DuckAll (float duckToVolume = 1f, float duckingDuration = 0.5f)
         {
-            DuckMusic(duckToVolume, duckingDuration);
-            DuckSound(duckToVolume, duckingDuration);
+            DuckMusic (duckToVolume, duckingDuration);
+            DuckSound (duckToVolume, duckingDuration);
         }
 
-        public static void DuckMusic(float duckToVolume = 0f, float duckingDuration = 0.5f, bool onSound = false)
+        public static void DuckMusic (float duckToVolume = 0f, float duckingDuration = 0.5f, bool onSound = false)
         {
-            Sounds.StopCoroutine(Sounds.DuckMusicState());
+            Sounds.StopCoroutine (Sounds.DuckMusicState ());
 
             Sounds._musicDuckingVolume = duckToVolume * Sounds.musicVolume * Sounds.masterVolume;
             Sounds._musicDuckingDuration = duckingDuration;
             Sounds._musicDuckingTimer = duckingDuration;
 
             if (!onSound)
-                Sounds.StartCoroutine(Sounds.DuckMusicState());
+                Sounds.StartCoroutine (Sounds.DuckMusicState ());
             else
-                Sounds.StartCoroutine(Sounds.DuckMusicOnSound());
+                Sounds.StartCoroutine (Sounds.DuckMusicOnSound ());
         }
 
-        public static void DuckSound(float duckToVolume = 0f, float duckingDuration = 0.5f)
+        public static void DuckSound (float duckToVolume = 0f, float duckingDuration = 0.5f)
         {
-            Sounds.StopCoroutine(Sounds.DuckSoundState());
+            Sounds.StopCoroutine (Sounds.DuckSoundState ());
 
             Sounds._soundDuckingVolume = duckToVolume * Sounds.masterVolume;
             Sounds._soundDuckingDuration = duckingDuration;
             Sounds._soundDuckingTimer = duckingDuration;
 
-            Sounds.StartCoroutine(Sounds.DuckSoundState());
+            Sounds.StartCoroutine (Sounds.DuckSoundState ());
         }
 
-        IEnumerator DuckMusicOnSound()
+        IEnumerator DuckMusicOnSound ()
         {
-            yield return DuckMusicState();
-            yield return new WaitForSeconds(Mathf.Max(this._duckOnSoundDuration - this.duckOnSoundTransitionDuration, 0));
-            DuckMusic(1);
+            yield return DuckMusicState ();
+            yield return new WaitForSeconds (Mathf.Max (this._duckOnSoundDuration - this.duckOnSoundTransitionDuration, 0));
+            DuckMusic (1);
         }
 
-        IEnumerator DuckMusicState()
+        IEnumerator DuckMusicState ()
         {
             while (this._musicDuckingTimer > 0)
             {
@@ -435,26 +453,26 @@ namespace PofyTools.Sound
                     this._musicDuckingTimer = 0;
 
                 float normalizedTime = 1 - this._musicDuckingTimer / this._musicDuckingDuration;
-                this._musicSource.volume = Mathf.Lerp(this._musicSource.volume, this._musicDuckingVolume, normalizedTime);
+                this._musicSource.volume = Mathf.Lerp (this._musicSource.volume, this._musicDuckingVolume, normalizedTime);
                 yield return null;
             }
-//            SoundManager.IsMusicDucked = this._musicSource.volume
+            //            SoundManager.IsMusicDucked = this._musicSource.volume
             //Restore on sound end
         }
 
         private float _duckOnSoundDuration = 0;
 
-        private static void DuckMusicOnSound(AudioClip sound)
+        private static void DuckMusicOnSound (AudioClip sound)
         {
-            Sounds.StopCoroutine(Sounds.DuckMusicState());
+            Sounds.StopCoroutine (Sounds.DuckMusicState ());
             //Debug.Log(sound.length);
 
             Sounds._duckOnSoundDuration = sound.length;
 
-            DuckMusic(Sounds.duckOnSoundVolume, Sounds.duckOnSoundTransitionDuration, true);
+            DuckMusic (Sounds.duckOnSoundVolume, Sounds.duckOnSoundTransitionDuration, true);
         }
 
-        IEnumerator DuckSoundState()
+        IEnumerator DuckSoundState ()
         {
             while (this._soundDuckingTimer > 0)
             {
@@ -465,7 +483,7 @@ namespace PofyTools.Sound
                 float normalizedTime = 1 - this._soundDuckingTimer / this._soundDuckingDuration;
                 foreach (var source in this._sources)
                 {
-                    source.volume = Mathf.Lerp(source.volume, this._soundDuckingVolume, normalizedTime);
+                    source.volume = Mathf.Lerp (source.volume, this._soundDuckingVolume, normalizedTime);
                 }
                 yield return null;
             }
@@ -478,9 +496,9 @@ namespace PofyTools.Sound
         private float _crossMixDuration, _crossMixTimer;
         private AudioSource _currentMusicSource, _targetMusicSource;
 
-        private void CrossMix(float duration)
+        private void CrossMix (float duration)
         {
-            StopCoroutine(this.CrossMix());
+            StopCoroutine (this.CrossMix ());
 
             this._crossMixDuration = duration;
             this._crossMixTimer = duration;
@@ -489,10 +507,10 @@ namespace PofyTools.Sound
             this._targetMusicSource = this._musicSources[1 - this._musicHead];
             this._musicHead = 1 - this._musicHead;
 
-            StartCoroutine(this.CrossMix());
+            StartCoroutine (this.CrossMix ());
         }
 
-        private IEnumerator CrossMix()
+        private IEnumerator CrossMix ()
         {
             while (this._crossMixTimer > 0)
             {
@@ -514,27 +532,27 @@ namespace PofyTools.Sound
 
         #region IDictionary implementation
 
-        public bool ContainsKey(string key)
+        public bool ContainsKey (string key)
         {
-            return this._dictionary.ContainsKey(key);
+            return this._dictionary.ContainsKey (key);
         }
 
-        public void Add(string key, AudioClip value)
+        public void Add (string key, AudioClip value)
         {
-            this._dictionary.Add(key, value);
+            this._dictionary.Add (key, value);
         }
 
-        public bool Remove(string key)
+        public bool Remove (string key)
         {
-            return this._dictionary.Remove(key);
+            return this._dictionary.Remove (key);
         }
 
-        public bool TryGetValue(string key, out AudioClip value)
+        public bool TryGetValue (string key, out AudioClip value)
         {
-            return this._dictionary.TryGetValue(key, out value);
+            return this._dictionary.TryGetValue (key, out value);
         }
 
-        public AudioClip this [string index]
+        public AudioClip this[string index]
         {
             get
             {
@@ -566,29 +584,29 @@ namespace PofyTools.Sound
 
         #region ICollection implementation
 
-        public void Add(KeyValuePair<string, AudioClip> item)
+        public void Add (KeyValuePair<string, AudioClip> item)
         {
-            throw new System.NotImplementedException();
+            throw new System.NotImplementedException ();
         }
 
-        public void Clear()
+        public void Clear ()
         {
-            this._dictionary.Clear();
+            this._dictionary.Clear ();
         }
 
-        public bool Contains(KeyValuePair<string, AudioClip> item)
+        public bool Contains (KeyValuePair<string, AudioClip> item)
         {
-            throw new System.NotImplementedException();
+            throw new System.NotImplementedException ();
         }
 
-        public void CopyTo(KeyValuePair<string, AudioClip>[] array, int arrayIndex)
+        public void CopyTo (KeyValuePair<string, AudioClip>[] array, int arrayIndex)
         {
-            throw new System.NotImplementedException();
+            throw new System.NotImplementedException ();
         }
 
-        public bool Remove(KeyValuePair<string, AudioClip> item)
+        public bool Remove (KeyValuePair<string, AudioClip> item)
         {
-            throw new System.NotImplementedException();
+            throw new System.NotImplementedException ();
         }
 
         public int Count
@@ -611,18 +629,18 @@ namespace PofyTools.Sound
 
         #region IEnumerable implementation
 
-        public IEnumerator<KeyValuePair<string, AudioClip>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string, AudioClip>> GetEnumerator ()
         {
-            return this._dictionary.GetEnumerator();
+            return this._dictionary.GetEnumerator ();
         }
 
         #endregion
 
         #region IEnumerable implementation
 
-        IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator ()
         {
-            return this._dictionary.GetEnumerator();
+            return this._dictionary.GetEnumerator ();
         }
 
         #endregion
